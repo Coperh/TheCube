@@ -38,8 +38,8 @@
                 },
                 {
                     "name": "",
-                    "id": "f46e75e0-5102-4d77-ad60-c143bd71f86c",
-                    "path": "*/{PrimaryAction}",
+                    "id": "e1b2e688-618a-47e9-90c1-552e225727c2",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

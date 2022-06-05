@@ -7,18 +7,30 @@ public class ControlPlayer : MonoBehaviour
 {
 
 
+
+
     private Controls controls;
 
     private Camera _camera;
 
+    private AudioSource _audioSource;
 
     public Transform player;
+
+
+
+    private GameManager gm;
+
+    private TargetHandler th;
+
+    private VInputManager input;
+
 
 
     [Header("Player")]
     [Tooltip("Rotation speed of the character")]
 
-    public const float roation_speed = 80.0f;
+    public const float roation_speed = 1.0f;
     [Tooltip("Rotation speed of the character")]
     public const float gyro_speed = 2.0f;
 
@@ -27,21 +39,17 @@ public class ControlPlayer : MonoBehaviour
     private float y_roation;
 
 
+    private bool gyro_enabled;
+
 
     private void Awake()
     {
 
-
         controls = new Controls();
-
 
         controls.Player.Enable();
 
-
         _camera = GetComponent<Camera>();
-
-
-
 
     }
 
@@ -50,15 +58,23 @@ public class ControlPlayer : MonoBehaviour
     void Start()
     {
 
+        gm = GameObject.Find("GameManager").GetComponent<GameManager>();
+        th = GameObject.Find("Targets").GetComponent<TargetHandler>();
+        input = GameObject.Find("GameManager").GetComponent<VInputManager>();
 
+
+        gyro_enabled = gm.gyro_enabled;
+
+        _audioSource = this.transform.parent.GetComponent<AudioSource>();
 
         y_roation = 0.0f;
 
-
-
-
-
     }
+
+    
+
+
+
 
 
 
@@ -66,60 +82,114 @@ public class ControlPlayer : MonoBehaviour
     void Update()
     {
 
-        if (controls.Player.Fire.triggered) OnFire();
+        Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+
+        if (controls.Player.Fire.triggered) OnFire(ray);
+
+        if (gm.game_started) Move();
 
 
-        if (!UnityEngine.InputSystem.Gyroscope.current.enabled) InputSystem.EnableDevice(UnityEngine.InputSystem.Gyroscope.current);
+
+
+        Debug.DrawRay(ray.origin, ray.direction * 10.0f, Color.red);
+
+
+    }
 
 
 
 
 
 
-        Vector2 stick = controls.Player.Look.ReadValue<Vector2>();
 
 
-        Vector3 rotaiton = UnityEngine.InputSystem.Gyroscope.current.angularVelocity.ReadValue();
 
 
-        if (stick.sqrMagnitude > EPISOLON) {
 
-            y_roation -= Time.deltaTime * stick.y * roation_speed;
+    public void Move() {
 
 
-            player.Rotate(0.0f, Time.deltaTime * stick.x * roation_speed, 0.0f);
+
+        Vector2 stick = input.look;
+
+
+
+        y_roation -= Time.deltaTime * stick.y * roation_speed;
+
+
+        
+        
+        player.Rotate(0.0f, Time.deltaTime * stick.x * roation_speed, 0.0f);
+
+
+
+        if (gyro_enabled)
+        {
+            Vector3 rotaiton = UnityEngine.InputSystem.Gyroscope.current.angularVelocity.ReadValue();
+
+            if (rotaiton.sqrMagnitude > EPISOLON)
+            {
+
+                y_roation -= rotaiton.x * gyro_speed;
+
+
+                player.Rotate(0.0f, -rotaiton.y * gyro_speed, 0.0f);
+            }
 
         }
-
-
-        if (rotaiton.sqrMagnitude > EPISOLON) {
-
-            y_roation -= rotaiton.x * gyro_speed;
-
-
-
-            player.Rotate(0.0f, -rotaiton.y * gyro_speed, 0.0f);
-
-        }
-
-
-
-        //transform.Rotate(stick);
-        //Debug.Log(rotaiton);
-        //Debug.Log(stick);
-
-
-
-
-
-
 
         y_roation = Mathf.Clamp(y_roation, -90.0f, 90.0f);
 
-        Debug.Log(y_roation);
+        //Debug.Log(y_roation);
 
         transform.localRotation = Quaternion.Euler(y_roation, 0.0f, 0.0f);
+
     }
+
+
+    public void OnFire(Ray ray)
+    {
+
+        
+        Debug.DrawRay(ray.origin, ray.direction * 10.0f, Color.yellow, 10.0f);
+
+        //Debug.Log(ray.origin + " " + ray.direction);
+
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+
+            if (hit.transform.tag == "Target" && hit.transform.gameObject.activeInHierarchy)
+            {
+                gm.score++;
+
+                hit.transform.gameObject.SetActive(false);
+                _audioSource.Play();
+
+                gm.ReduceTargetCount();
+            }
+            else
+            {
+
+                Debug.Log("I hit " + hit.collider.name);
+            }
+        }
+
+        gm.shots_fired++;
+
+        gm.accuracy = gm.score * 100 / gm.shots_fired;
+
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -129,40 +199,12 @@ public class ControlPlayer : MonoBehaviour
     public void OnLook(InputAction.CallbackContext context)
     {
 
+
         Vector2 v = context.ReadValue<Vector2>();
 
         
         
     }
-
-
-    public void OnFire()
-    {
-
-        RaycastHit hit;
-
-        Ray ray = Camera.main.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
-
-        if (Physics.Raycast(ray, out hit))
-        {
-            Debug.Log("I hit " + hit.collider.name);
-
-            if (hit.transform.tag == "Target")
-            {
-                hit.transform.GetComponent<Renderer>().material.color = Color.red;
-            }
-        }
-
-
-
-
-
-        Debug.Log("fire");
-
-
-
-    }
-
 
 
 }
