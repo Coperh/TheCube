@@ -93,7 +93,6 @@ public class GameManager : MonoBehaviour
 
 
 
-
     //public TMP_Text text;
 
     public bool gyro_enabled;
@@ -122,6 +121,7 @@ public class GameManager : MonoBehaviour
 
 
         targetHandler = GameObject.Find("Targets").GetComponent<TargetHandler>();
+
     }
 
 
@@ -219,7 +219,12 @@ public class GameManager : MonoBehaviour
         StartCoroutine(th_spawn);
 
         Debug.Log("Start");
-        StartCoroutine(TimeKeep(is_timed));
+
+
+        time_keeper = TimeKeep(is_timed);
+
+
+        StartCoroutine(time_keeper);
         
     }
 
@@ -232,6 +237,7 @@ public class GameManager : MonoBehaviour
 
 
         StopCoroutine(th_spawn);
+        StopCoroutine(time_keeper);
         targetHandler.Clear();
 
 

@@ -30,8 +30,11 @@ public class EndScreen : MonoBehaviour
 
     }
 
+    private void Start() { 
+    }
 
-    private void Start()
+
+    private void OnEnable()
     {
 
        
